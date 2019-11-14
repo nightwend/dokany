@@ -894,8 +894,8 @@ int impl_fuse_context::set_file_time(PCWSTR file_name,
       return ops_.win_set_times(fname.c_str(), nullptr, creation_time,
                                 last_access_time, last_write_time);
 
-    if (hndl->is_dir())
-      return -EACCES;
+    //if (hndl->is_dir())
+    //  return -EACCES;
 
     fuse_file_info finfo(hndl->make_finfo());
 
