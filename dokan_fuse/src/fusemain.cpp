@@ -1175,10 +1175,9 @@ int impl_file_lock::unlock_file(impl_file_handle *file, long long start,
 impl_file_handle::impl_file_handle(bool is_dir, DWORD shared_mode)
     : is_dir_(is_dir), fh_(-1), next_file(nullptr), file_lock(nullptr), shared_mode_(shared_mode) {}
 
-impl_file_handle::~impl_file_handle() {  }
+impl_file_handle::~impl_file_handle() { file_lock->remove_file(this); }
 
 int impl_file_handle::close(const struct fuse_operations *ops) {
-  file_lock->remove_file(this);
   int flush_err = 0;
   if (is_dir_) {
     if (ops->releasedir) {
