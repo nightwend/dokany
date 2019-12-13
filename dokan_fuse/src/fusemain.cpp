@@ -1125,18 +1125,19 @@ int impl_file_lock::lock_file(impl_file_handle *file, long long start,
     impl_file_handle::locks_t::iterator j = i->locks.lower_bound(start);
     if (j != i->locks.end()) {
       // we found a range which start after our start
-      if (len > j->first - start)
+      if (start + len > j->first)
         locked = true;
       // check previous not override
       if (j != i->locks.begin()) {
         --j;
-        if (j->second > start - j->first)
+		//lock.start + lock.len > start
+        if (j->first + j->second > start)
           locked = true;
       }
     } else {
-      // check last
+      // start > all lock.start. check last
       impl_file_handle::locks_t::reverse_iterator p = i->locks.rbegin();
-      if (p != i->locks.rend() && start - p->first < p->second)
+      if (p != i->locks.rend() && start < p->first + p->second)
         locked = true;
     }
   }
@@ -1174,9 +1175,10 @@ int impl_file_lock::unlock_file(impl_file_handle *file, long long start,
 impl_file_handle::impl_file_handle(bool is_dir, DWORD shared_mode)
     : is_dir_(is_dir), fh_(-1), next_file(nullptr), file_lock(nullptr), shared_mode_(shared_mode) {}
 
-impl_file_handle::~impl_file_handle() { file_lock->remove_file(this); }
+impl_file_handle::~impl_file_handle() {  }
 
 int impl_file_handle::close(const struct fuse_operations *ops) {
+  file_lock->remove_file(this);
   int flush_err = 0;
   if (is_dir_) {
     if (ops->releasedir) {
