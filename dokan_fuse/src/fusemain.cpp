@@ -1175,7 +1175,12 @@ int impl_file_lock::unlock_file(impl_file_handle *file, long long start,
 impl_file_handle::impl_file_handle(bool is_dir, DWORD shared_mode)
     : is_dir_(is_dir), fh_(-1), next_file(nullptr), file_lock(nullptr), shared_mode_(shared_mode) {}
 
-impl_file_handle::~impl_file_handle() { file_lock->remove_file(this); }
+impl_file_handle::~impl_file_handle() {
+	if (file_lock) {
+		file_lock->remove_file(this);
+		file_lock = nullptr;
+	}
+}
 
 int impl_file_handle::close(const struct fuse_operations *ops) {
   int flush_err = 0;
@@ -1193,7 +1198,12 @@ int impl_file_handle::close(const struct fuse_operations *ops) {
     if (ops->release) // Ignoring result.
     {
       fuse_file_info finfo(make_finfo());
-      ops->release(get_name().c_str(), &finfo); // Set open() flags here?
+	  std::string name = get_name();
+	  if (file_lock) {
+		  file_lock->remove_file(this);
+		  file_lock = nullptr;
+	  }
+	  ops->release(name.c_str(), &finfo); // Set open() flags here?
     }
   }
   return flush_err;
