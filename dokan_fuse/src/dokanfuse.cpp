@@ -528,7 +528,7 @@ int do_fuse_loop(struct fuse *fs, bool mt) {
   if (fs->conf.readonly)
     dokanOptions->Options |= DOKAN_OPTION_WRITE_PROTECT;
 
-  dokanOptions->Options |= DOKAN_OPTION_MOUNT_MANAGER;
+  //dokanOptions->Options |= DOKAN_OPTION_MOUNT_MANAGER;
 
   // Load Dokan DLL
   if (!fs->ch->init()) {
