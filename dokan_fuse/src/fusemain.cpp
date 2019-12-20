@@ -1014,7 +1014,7 @@ int impl_file_locks::get_file(const std::string &name, bool is_dir,
                               DWORD access_mode, DWORD shared_mode,
                               std::unique_ptr<impl_file_handle> &file) {
   int res = 0;
-  file.reset(new impl_file_handle(is_dir, shared_mode));
+  file.reset(new impl_file_handle(is_dir, access_mode, shared_mode));
 
   // check previous files with same names
   impl_file_lock *lock, *old_lock = nullptr;
@@ -1034,14 +1034,18 @@ int impl_file_locks::get_file(const std::string &name, bool is_dir,
     LeaveCriticalSection(&this->lock);
     return res;
   }
-
+  bool breakExistHandle = false;
   // check previous files with same names
   DWORD share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
   for (impl_file_handle *p = lock->first; p; p = p->next_file)
 	  if (file.get() != p) {
 		  share &= p->shared_mode_;
+		  breakExistHandle = (required_share(p->access_mode_) | shared_mode) != shared_mode;
+		  if (breakExistHandle) {
+			  break;
+		  }
 	  }
-  if ((required_share(access_mode) | share) != share) {
+  if (breakExistHandle || ((required_share(access_mode) | share) != share)) {
     file.reset();
     res = -EACCES;
   } else {
@@ -1172,8 +1176,8 @@ int impl_file_lock::unlock_file(impl_file_handle *file, long long start,
 ///////////////////////////////////////////////////////////////////////////////////////
 ////// File handle
 ///////////////////////////////////////////////////////////////////////////////////////
-impl_file_handle::impl_file_handle(bool is_dir, DWORD shared_mode)
-    : is_dir_(is_dir), fh_(-1), next_file(nullptr), file_lock(nullptr), shared_mode_(shared_mode) {}
+impl_file_handle::impl_file_handle(bool is_dir, DWORD access_mode, DWORD shared_mode)
+	: is_dir_(is_dir), fh_(-1), next_file(nullptr), file_lock(nullptr), access_mode_(access_mode), shared_mode_(shared_mode) {}
 
 impl_file_handle::~impl_file_handle() {
 	if (file_lock) {

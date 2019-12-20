@@ -225,10 +225,11 @@ class impl_file_handle
 	uint64_t fh_;
 	impl_file_handle *next_file;
 	impl_file_lock *file_lock;
+	DWORD access_mode_;
 	DWORD shared_mode_;
 	typedef std::map<long long, long long> locks_t;
 	locks_t locks;
-	impl_file_handle(bool is_dir, DWORD shared_mode);
+	impl_file_handle(bool is_dir, DWORD access_mode, DWORD shared_mode);
 public:
 	~impl_file_handle();
 
