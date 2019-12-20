@@ -419,7 +419,10 @@ int impl_fuse_context::cleanup(LPCWSTR file_name,
       } else {
         do_delete_file(file_name, dokan_file_info);
       }
-    }
+	}
+	else if(!dokan_file_info->IsDirectory){
+		close_file(file_name, dokan_file_info);
+	}
   }
 
   return 0;
