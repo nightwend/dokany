@@ -423,8 +423,13 @@ int impl_fuse_context::cleanup(LPCWSTR file_name,
 	}
   }
   if (!closed) {
-	  //close file in cleanup, not support CreateFileMapping
-	  close_file(file_name, dokan_file_info);
+	  if (dokan_file_info->Context) {
+		  impl_file_handle *hndl =
+			  reinterpret_cast<impl_file_handle *>(dokan_file_info->Context);
+		  //https://community.osr.com/discussion/66005
+		  //IRP_MJ_CLEANUP comes first then IRP_MJ_CLOSE,but IRP_MJ_CLOSE is async in dokany which cause the file can not be open with the different sharemode
+		  hndl->resetSharedMode();
+	  }
   }
 
   return 0;
@@ -1191,7 +1196,11 @@ impl_file_handle::~impl_file_handle() {
 		file_lock = nullptr;
 	}
 }
-
+void impl_file_handle::resetSharedMode() {
+	//mark shared_mode_ and access_mode_ to not lock any others
+	shared_mode_ = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
+	access_mode_ = 0;
+}
 int impl_file_handle::close(const struct fuse_operations *ops) {
   int flush_err = 0;
   if (is_dir_) {
