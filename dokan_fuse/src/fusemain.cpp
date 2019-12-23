@@ -408,11 +408,12 @@ int impl_fuse_context::cleanup(LPCWSTR file_name,
 
   // The one way to solve this is to keep a table of files 'still in flight'
   // and block until the file is closed. We're not doing this yet.
-
+  bool closed = false;
   // No context for directories when ops_.opendir is not set
   if (dokan_file_info->Context
     || (dokan_file_info->IsDirectory && !ops_.opendir)) {
     if (dokan_file_info->DeleteOnClose) {
+	  closed = true;
       close_file(file_name, dokan_file_info);
       if (dokan_file_info->IsDirectory) {
         do_delete_directory(file_name, dokan_file_info);
@@ -420,9 +421,10 @@ int impl_fuse_context::cleanup(LPCWSTR file_name,
         do_delete_file(file_name, dokan_file_info);
       }
 	}
-	else if(!dokan_file_info->IsDirectory){
-		close_file(file_name, dokan_file_info);
-	}
+  }
+  if (!closed) {
+	  //close file in cleanup, not support CreateFileMapping
+	  close_file(file_name, dokan_file_info);
   }
 
   return 0;
@@ -569,16 +571,17 @@ win_error impl_fuse_context::create_file(LPCWSTR file_name, DWORD access_mode,
 
 int impl_fuse_context::close_file(LPCWSTR file_name,
                                   PDOKAN_FILE_INFO dokan_file_info) {
-  impl_file_handle *hndl =
-      reinterpret_cast<impl_file_handle *>(dokan_file_info->Context);
-
   int flush_err = 0;
-  if (hndl) {
+  if (dokan_file_info->Context) {
+		impl_file_handle *hndl =
+      reinterpret_cast<impl_file_handle *>(dokan_file_info->Context);
+    dokan_file_info->Context = 0;
+
     flush_err = hndl->close(&ops_);
     delete hndl;
+	hndl = nullptr;
   }
-  dokan_file_info->Context = 0;
-
+  
   return flush_err;
 }
 

@@ -220,7 +220,8 @@ static void DOKAN_CALLBACK FuseCloseFile(LPCWSTR FileName,
     FPRINTF(stderr, "Close: %ls\n\n", FileName);
 
   impl_chain_guard guard(impl, DokanFileInfo->ProcessId);
-  impl->close_file(FileName, DokanFileInfo);
+  //close file in cleanup, close is not sync,which may case share issue in wps/office edit ppt
+  //impl->close_file(FileName, DokanFileInfo);
 }
 
 static NTSTATUS DOKAN_CALLBACK FuseReadFile(LPCWSTR FileName, LPVOID Buffer,
