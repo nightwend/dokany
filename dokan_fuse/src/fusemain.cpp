@@ -617,7 +617,7 @@ int impl_fuse_context::read_file(LPCWSTR /*file_name*/, LPVOID buffer,
   fuse_file_info finfo(hndl->make_finfo());
 
   DWORD total_read = 0;
-  while (total_read < num_bytes_to_read) {
+  while (hndl && total_read < num_bytes_to_read) {
     DWORD to_read = num_bytes_to_read - total_read;
     if (to_read > MAX_READ_SIZE)
       to_read = MAX_READ_SIZE;
