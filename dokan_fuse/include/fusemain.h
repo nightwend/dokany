@@ -237,6 +237,7 @@ public:
 	int close(const struct fuse_operations *ops);
 	fuse_file_info make_finfo();
 	void resetSharedMode();
+	bool is_invalid ()const { return !file_lock; }
 	const std::string& get_name() const {return file_lock->get_name();}
 	void set_finfo(const fuse_file_info& finfo) { fh_ = finfo.fh; };
 	int check_lock(long long start, long long len) { return file_lock->lock_file(this, start, len, false); }
