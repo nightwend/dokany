@@ -139,6 +139,11 @@ int impl_fuse_context::do_open_file(LPCWSTR FileName, DWORD share_mode,
   fuse_file_info finfo = {0};
   finfo.flags = convert_flags(Flags);
 
+  //hack: use O_TEMPORARY to tell open users are trying to delete file and prevent it
+  //BEDROCK4-6417
+  if (DokanFileInfo->DeleteOnClose) {
+	  finfo.flags |= O_TEMPORARY;
+  }
   CHECKED(ops_.open(fname.c_str(), &finfo));
 
   file->set_finfo(finfo);
@@ -739,6 +744,14 @@ int impl_fuse_context::get_file_information(
 
 int impl_fuse_context::delete_file(LPCWSTR file_name,
                                    PDOKAN_FILE_INFO dokan_file_info) {
+  if (dokan_file_info->DeleteOnClose) {
+	  //prevent delete called on cleanup
+	  dokan_file_info->DeleteOnClose = 0;
+  }
+  //BEDROCK4-6417
+  //call delete directly on delete file, otherwise the access denied respone may be lost since it's called in cleanup
+  return do_delete_file(file_name, dokan_file_info);
+  /*
   std::string fname = unixify(wchar_to_utf8_cstr(file_name));
 
   if (!ops_.getattr)
@@ -746,6 +759,7 @@ int impl_fuse_context::delete_file(LPCWSTR file_name,
 
   struct FUSE_STAT stbuf = {0};
   return ops_.getattr(fname.c_str(), &stbuf);
+  */
 }
 
 int impl_fuse_context::move_file(LPCWSTR file_name, LPCWSTR new_file_name,
